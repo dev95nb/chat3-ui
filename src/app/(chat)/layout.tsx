@@ -1,28 +1,99 @@
 "use client"
 
-import React, { useState } from 'react';
-import { Flex, Paper, ScrollArea, Box, TextInput, Text, Button, Avatar, Group } from '@mantine/core';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Flex, Paper, Box, Text, Button, Avatar, Group } from '@mantine/core';
 import { IconMessage, IconChevronLeft, IconChevronRight, IconPlus, IconSearch, IconDotsVertical, IconUserCircle } from '@tabler/icons-react';
+import { InfiniteScrollList } from '@/components/InfiniteScrollList';
+import { useDeleteChat, useInfiniteChats, useUpdateChatTitle } from '@/api/hooks/chat';
+import { ChatSession } from '@/types/chat';
+import { useRouter } from 'next/navigation';
 
-// Định nghĩa props cho Layout, bao gồm `children`
 interface ChatLayoutProps {
     children: React.ReactNode;
 }
 
 export default function ChatLayout({ children }: ChatLayoutProps) {
     // State để quản lý việc đóng/mở sidebar
+    const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [localChatSessions, setLocalChatSessions] = useState<ChatSession[]>([]);
+    const {
+        data: chatsData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: isInitialLoading,
+    } = useInfiniteChats({ limit: 20 });
 
-    // Dữ liệu mẫu cho lịch sử chat (giữ lại trong layout vì nó là phần chung)
-    const chatHistory = [
-        { id: '1', title: 'Cuộc trò chuyện 1 Cuộc trò chuyện 1 Cuộc trò chuyện 1 Cuộc trò chuyện 1' },
-        { id: '2', title: 'Cuộc trò chuyện 2' },
-        { id: '3', title: 'Cuộc trò chuyện 3' },
-        ...Array.from({ length: 20 }).map((_, index) => ({
-            id: `${index + 4}`,
-            title: `Cuộc trò chuyện ${index + 4}`,
-        })),
-    ];
+    const deleteChat = useDeleteChat();
+    const updateChatTitle = useUpdateChatTitle();
+
+    // Cập nhật local state khi dữ liệu từ API thay đổi
+    useEffect(() => {
+        if (chatsData?.pages) {
+            const chatSessions = chatsData.pages.flatMap(page =>
+                page.chats.map(chat => ({
+                    id: chat._id,
+                    title: chat.title || 'New Chat',
+                    initMsg: chat.initMsg || '',
+                    createdAt: new Date(chat.createdAt),
+                    updatedAt: new Date(chat.updatedAt),
+                    language: chat.language
+                }))
+            );
+            setLocalChatSessions(chatSessions);
+        }
+    }, [chatsData]);
+
+
+    const handleDeleteChat = useCallback((deleteChatId: string) => {
+        deleteChat.mutate(deleteChatId, {
+            onSuccess: () => {
+                // Cập nhật local state sau khi xóa chat
+                setLocalChatSessions(prev => prev.filter(chat => chat.id !== deleteChatId));
+
+            },
+            onError: (error: Error) => {
+                console.error('Error deleting chat:', error);
+            }
+        });
+    }, [router, deleteChat]);
+
+    const handleRenameChat = useCallback((chatId: string, newTitle: string) => {
+        // Cập nhật local state ngay lập tức để UI phản hồi nhanh
+        setLocalChatSessions(prev =>
+            prev.map(chat =>
+                chat.id === chatId
+                    ? { ...chat, title: newTitle }
+                    : chat
+            )
+        );
+
+        // Gọi API để cập nhật trên server
+        updateChatTitle.mutate(
+            { chatId, title: newTitle },
+            {
+                onError: (error: Error) => {
+                    console.error('Error updating chat title:', error);
+                    // Khôi phục lại dữ liệu cũ nếu có lỗi
+                    if (chatsData?.pages) {
+                        const chatSessions = chatsData.pages.flatMap(page =>
+                            page.chats.map(chat => ({
+                                id: chat._id,
+                                title: chat.title || 'New Chat',
+                                initMsg: chat.initMsg || '',
+                                createdAt: new Date(chat.createdAt),
+                                updatedAt: new Date(chat.updatedAt),
+                                language: chat.language
+                            }))
+                        );
+                        setLocalChatSessions(chatSessions);
+                    }
+                }
+            }
+        );
+    }, [updateChatTitle, chatsData]);
+
 
     return (
         <Flex direction="row" style={{ height: '100vh' }}>
@@ -81,28 +152,34 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
                         </Button>
                     </Box>
 
-                    {/* Chat History Section */}
-                    <ScrollArea style={{ flex: 1 }}>
-                        {chatHistory.map((chat) => (
-                            <Box
+                    <InfiniteScrollList
+                        items={localChatSessions}
+                        hasNextPage={hasNextPage}
+                        isLoading={isFetchingNextPage}
+                        isInitialLoading={isInitialLoading}
+                        onLoadMore={() => {
+                            if (hasNextPage) {
+                                fetchNextPage();
+                            }
+                        }}
+                        renderItem={(chat, index, ref) => {
+                            return <Box
                                 key={chat.id}
+                                onClick={() => {
+                                    router.push(`/chat/${chat.id}`);
+                                }}
                                 style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    padding: '8px 10px',
-                                    borderBottom: '1px solid var(--mantine-color-gray-1)',
                                     cursor: 'pointer',
-                                    '&:hover': {
-                                        backgroundColor: 'var(--mantine-color-gray-0)',
-                                    },
                                 }}
                             >
                                 <Text truncate>{isSidebarOpen ? chat.title : ''}</Text>
                                 {isSidebarOpen && <IconDotsVertical size={16} />}
-                            </Box>
-                        ))}
-                    </ScrollArea>
+                            </Box>;
+                        }}
+                    />
                 </Flex>
 
                 {/* Sidebar Footer */}

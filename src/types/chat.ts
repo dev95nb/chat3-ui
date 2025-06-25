@@ -3,8 +3,9 @@ export interface ChatSession {
   id: string;
   title: string;
   initMsg: string | { contents: MessageContent[]; isThinking: boolean };
-  timestamp: Date;
   language: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ChatMessage {
