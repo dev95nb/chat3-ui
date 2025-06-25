@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button, Loader } from '@mantine/core';
-import { useMantineTheme } from '@mantine/core';
 import { IconBrandGoogle, IconBrandFacebook, IconBrandApple } from '@tabler/icons-react';
 import { SocialProvider } from '../types/auth';
 
@@ -45,7 +44,6 @@ const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
   mode = 'login',
   size = 'default',
 }) => {
-  const theme = useMantineTheme();
   const config = providerConfig[provider];
 
   if (!config) {
