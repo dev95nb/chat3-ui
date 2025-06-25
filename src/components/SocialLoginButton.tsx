@@ -31,7 +31,6 @@ interface SocialLoginButtonProps {
   className?: string;
   disabled?: boolean;
   loading?: boolean;
-  mode?: 'login' | 'register';
   size?: 'default' | 'sm' | 'lg';
 }
 
@@ -41,7 +40,6 @@ const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
   className = '',
   disabled = false,
   loading = false,
-  mode = 'login',
   size = 'default',
 }) => {
   const config = providerConfig[provider];
@@ -60,12 +58,11 @@ const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
     lg: 'lg',
   };
 
-  // Tạo văn bản nút dựa trên trạng thái và mode
   const getButtonText = () => {
     if (loading) {
-      return mode === 'register' ? 'Đang đăng ký...' : 'Đang đăng nhập...';
+      return 'Đang đăng nhập...';
     }
-    const action = mode === 'register' ? 'Đăng ký' : 'Đăng nhập';
+    const action = 'Đăng nhập';
     return `${action} với ${name}`;
   };
 
@@ -77,7 +74,7 @@ const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
       variant={variant}
       color={color}
       leftSection={loading ? <Loader size="sm" /> : icon}
-      aria-label={`${mode === 'register' ? 'Đăng ký' : 'Đăng nhập'} với ${name}`}
+      aria-label={`Đăng nhập với ${name}`}
       className={className}
     >
       {getButtonText()}
