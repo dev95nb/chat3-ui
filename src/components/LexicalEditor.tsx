@@ -96,9 +96,9 @@ const LexicalEditor: React.FC<LexicalEditorProps> = ({
               className={classes.editor}
               aria-placeholder={placeholder}
               placeholder={
-                <div className={classes.placeholder}>
+                <Box className={classes.placeholder}>
                   {placeholder}
-                </div>
+                </Box>
               }
             />
           }
