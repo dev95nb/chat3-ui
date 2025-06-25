@@ -1,0 +1,33 @@
+.container {
+    position: relative;
+}
+
+.editor {
+    min-height: 40px;
+    max-height: 200px;
+    width: 100%;
+    resize: none;
+    color: var(--mantine-color-gray-1);
+    background-color: transparent;
+    font-size: var(--mantine-font-size-md);
+    line-height: var(--mantine-line-height-md);
+    position: relative;
+    outline: none;
+    border: none;
+    overflow-y: auto;
+}
+
+.placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: var(--mantine-color-gray-6);
+    pointer-events: none;
+    user-select: none;
+    font-size: var(--mantine-font-size-md);
+    line-height: var(--mantine-line-height-md);
+}
+
+.paragraph {
+    margin: 0;
+}
